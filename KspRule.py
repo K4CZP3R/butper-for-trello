@@ -6,6 +6,7 @@ import json
 class KspRuleTrigger(Enum):
     NEW_CARD = 'NEW_CARD'
     UPDATE_CARD_MOVED_TO = 'UPDATE_CARD_MOVED_TO'
+    CHECKLIST_STATE_CHANGED = 'CHECKLIST_STATE_CHANGED'
 
 
 class KspRuleActionType(Enum):
@@ -13,16 +14,19 @@ class KspRuleActionType(Enum):
     ADD_COMMENT = 1
     ADD_LABEL = 2
     REMOVE_LABEL = 3
-    CREATE_CUSTOM_FIELD = 4
+    CREATE_CHECKLIST = 4
+    REMOVE_CHECKLIST = 5
 
 
 class KspRuleAction:
     def __init__(
             self,
             action_type: KspRuleActionType,
-            action_value: Any):
+            action_value: Any,
+            action_sub_value: Any):
         self.__action_type = action_type
         self.__action_value = action_value
+        self.__action_sub_value = action_sub_value
 
     @property
     def action_type(self): return self.__action_type
@@ -30,17 +34,22 @@ class KspRuleAction:
     @property
     def action_value(self): return self.__action_value
 
+    @property
+    def action_sub_value(self): return self.__action_sub_value
+
     def to_dict(self):
         return {
             'action_type': self.action_type.name,
-            'action_value': self.action_value
+            'action_value': self.action_value,
+            'action_sub_value': self.action_sub_value
         }
 
     @classmethod
     def from_dict(cls, d: dict):
         return cls(
             action_type=KspRuleActionType[d['action_type']],
-            action_value=d['action_value']
+            action_value=d['action_value'],
+            action_sub_value=d['action_sub_value'] if 'action_sub_value' in d else ""
         )
 
     def __str__(self):

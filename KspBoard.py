@@ -3,7 +3,6 @@ from KspList import KspList
 from KspLabel import KspLabel
 from typing import List, Optional
 from KspRule import KspRule
-from KspLabelCollection import KspLabelCollection
 import config
 import logging
 
@@ -14,13 +13,12 @@ class KspBoard:
 
         self.rules = []
         self.log = logging.getLogger(__name__)
-        self._label_collection = KspLabelCollection(self._this)
         self.lists = self.__fetch_lists()
 
     def __fetch_lists(self) -> List[KspList]:
         to_return = []
         for b_list in self._this.get_lists('open'):
-            to_return.append(KspList(b_list, self._label_collection))
+            to_return.append(KspList(b_list))
         return to_return
 
     def add_rules(self, rules: List[KspRule]):

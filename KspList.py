@@ -12,13 +12,12 @@ import dateutil.parser
 from datetime import datetime
 import config
 import logging
+from ActionsHelpers import ActionsHelpers
 
 
 class KspList:
-    def __init__(self, trello_list: TrelloList, label_collection: KspLabelCollection):
+    def __init__(self, trello_list: TrelloList):
         self._this = trello_list
-        self._label_collection = label_collection
-
         self.cards = []
         self.__fetch_cards(init_fetch=True)
 
@@ -39,34 +38,28 @@ class KspList:
 
         for l_card in self._this.list_cards():
             l_card: TrelloCard
-            if not self.__card_already_present(l_card.id) or init_fetch:
-                self.cards.append(KspCard(l_card, self._label_collection))
+
+            card_ret = self.__card_already_present(l_card.id)
+            if card_ret == -1 or init_fetch:
+                self.cards.append(KspCard(l_card))
                 newly_added_cards.append(self.cards[-1])
-            # TODO: replace already existing cards (Maybe updated?)
+            else:
+                self.cards[card_ret].update_itself(l_card)
 
         return newly_added_cards
 
     def __fetch_new_actions(self, action_type: str):
-        new_actions = []
         actions = self._this.fetch_actions(action_type)
         actions.reverse()
 
         last_check = self.actions_check_times.get_action_last_check(
             action_type)
-        if last_check is None:
-            self.actions_check_times.set_action_last_check(
-                action_type, datetime.now().timestamp())
-            return []
-        for action in actions:
 
-            action_dt = dateutil.parser.parse(action['date'])
-
-            if action_dt.timestamp() > last_check:
-                new_actions.append(action)
-
-            self.actions_check_times.set_action_last_check(
-                action_type, action_dt.timestamp())
-        return new_actions
+        ret = ActionsHelpers.new_actions(actions, last_check)
+        self.actions_check_times.set_action_last_check(
+            action_type, ret[0]
+        )
+        return ret[1]
 
     def __filter_out_actions_list(self, actions: List[dict]):
         for action in actions:
@@ -78,8 +71,8 @@ class KspList:
         for card in self.cards:
             card: KspCard
             if card.get_id() == card_id:
-                return True
-        return False
+                return self.cards.index(card)
+        return -1
 
     def __get_card_by_id(self, card_id: str):
         for card in self.cards:
@@ -88,17 +81,14 @@ class KspList:
                 return card
         return None
 
-    def execute_rule(self, rule: KspRule):
+    def __execute_list_specific_actions(self, rule: KspRule):
         if rule.trigger == KspRuleTrigger.NEW_CARD:
             trello_actions = self.__fetch_new_actions('createCard')
         elif rule.trigger == KspRuleTrigger.UPDATE_CARD_MOVED_TO:
             trello_actions = self.__fetch_new_actions('updateCard')
             self.__filter_out_actions_list(trello_actions)
-        else:
-            print("Trigger unknown!")
-            return False
 
-        self.__fetch_cards(True)
+        self.__fetch_cards(False)
 
         rets = []
         for trello_action in trello_actions:
@@ -113,6 +103,23 @@ class KspList:
             rets.append(card_in_question.execute_rule_actions(
                 trello_action, rule.actions))
         return rets
+
+    def __execute_card_specific_actions(self, rule: KspRule):
+        self.__fetch_cards(False)
+
+        ret = []
+
+        for ksp_card in self.cards:
+            ret.append(ksp_card.execute_rule_actions_based_on_trigger(rule))
+        return ret
+
+    def execute_rule(self, rule: KspRule):
+        if rule.trigger in [KspRuleTrigger.NEW_CARD, KspRuleTrigger.UPDATE_CARD_MOVED_TO]:
+            return self.__execute_list_specific_actions(rule)
+        elif rule.trigger in [KspRuleTrigger.CHECKLIST_STATE_CHANGED]:
+            return self.__execute_card_specific_actions(rule)
+        else:
+            return [False]
 
     def __str__(self):
         return self._this.name

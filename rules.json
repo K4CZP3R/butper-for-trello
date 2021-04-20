@@ -18,8 +18,9 @@
                 "action_value": "Unpaid"
             },
             {
-                "action_type": "CREATE_CUSTOM_FIELD",
-                "action_value": "checkbox"
+                "action_type": "CREATE_CHECKLIST",
+                "action_value": "Bought Actions",
+                "action_sub_value": "Created payment, Paid"
             }
         ]
     },
@@ -30,7 +31,16 @@
             {
                 "action_type": "REMOVE_LABEL",
                 "action_value": "Unpaid"
+            },
+            {
+                "action_type": "REMOVE_CHECKLIST",
+                "action_value": "Bought Actions"
             }
         ]
+    },
+    {
+        "trigger": "CHECKLIST_STATE_CHANGED",
+        "execute_in": "Bought",
+        "actions": []
     }
 ]
