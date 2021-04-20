@@ -1,0 +1,36 @@
+[
+    {
+        "trigger": "NEW_CARD",
+        "execute_in": "Buy",
+        "actions": [
+            {
+                "action_type": "ASSIGN_TO_CREATOR",
+                "action_value": ""
+            }
+        ]
+    },
+    {
+        "trigger": "UPDATE_CARD_MOVED_TO",
+        "execute_in": "Bought",
+        "actions": [
+            {
+                "action_type": "ADD_LABEL",
+                "action_value": "Unpaid"
+            },
+            {
+                "action_type": "CREATE_CUSTOM_FIELD",
+                "action_value": "checkbox"
+            }
+        ]
+    },
+    {
+        "trigger": "UPDATE_CARD_MOVED_TO",
+        "execute_in": "Buy",
+        "actions": [
+            {
+                "action_type": "REMOVE_LABEL",
+                "action_value": "Unpaid"
+            }
+        ]
+    }
+]
